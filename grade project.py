@@ -56,7 +56,6 @@ test.isna().sum()
 from sklearn.impute import KNNImputer
 imputer = KNNImputer(n_neighbors=1, weights="uniform")
 test=imputer.fit_transform(test)
-test=pd.DataFrame(test)
 test = pd.DataFrame(test)
 
 #seperating dependent and independent variable 
@@ -68,25 +67,41 @@ from sklearn.svm import SVC
 classifier=SVC(kernel='rbf',random_state=0)
 classifier.fit(x,y)
 
+#checking accuracy of SVM classifier on test data
+SVM_Accuracy = classifier.score(x,y)
+print("Accuracy for SVM Classification is :", SVM_Accuracy)
+#the accuracy obtyained using rbf kernel is 65.74%, for achieving more accuracy trying different kernel's
+
+#Fitting SVM model to training dataset using linear kernel 
+from sklearn.svm import SVC
+classifier=SVC(kernel='linear',gamma='auto')
+classifier.fit(x,y)
+
+#checking the accuracy of SVM model on training dataset using linear as kernel
+SVM_Accuracy = classifier.score(x,y)
+print("Accuracy for SVM Classification is :", SVM_Accuracy)
+#the accuracy obtained using linear kernel is better 23% than rbf kernel.
+
+#seperating variables for test data
 test=test.iloc[:,1:].values
+
+#predicting grade values on test data
 predictions = classifier.predict(test)
 
-#applying k-fold cross validation.  
-from sklearn.model_selection import cross_val_score
-accuracies=cross_val_score(estimator=classifier, X=x, y=y,cv=10)
-accuracies.mean()
-accuracies.std()
+#the dataset got converted to array's, rebuilding it to dataframe
+test = pd.DataFrame(test)
 
-#applying grid search to find the best fit model and the best parameters
-from sklearn.model_selection import GridSearchCV
-parameters = [{'C':[1, 10, 100, 1000], 'kernel': ['linear']},
-             {'C': [1, 10, 100, 1000], 'kernel': ['poly'], 'gamma': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
-             {'C': [1, 10, 100, 1000], 'kernel': ['rbf'], 'gamma': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]}]
+#creating a seperate dataframe and adding grade coloumn in test dataset
+test['Grade'] = predictions
 
-grid_search = GridSearchCV(estimator = classifier,
-                          param_grid = parameters,
-                          scoring = 'accuracy',
-                          cv = 10,
-                          n_jobs = -1)
+# Assigning the column names as per it's index values
+test.columns = ['Area(total)', 'Troom', 'Nbedrooms', 'Nbwashrooms', 'Twashrooms','roof', 'Roof(Area)', 'Lawn(Area)', 'Nfloors', 'API', 'ANB', 'EXPECTED','Grade']
 
-grid_search = grid_search.fit(x, y)
+#visualising the results
+import matplotlib.pyplot as plt
+from mlxtend.plotting import category_scatter
+
+fig = fig = category_scatter(x='EXPECTED', y='Area(total)', label_col='Grade', data=test, legend_loc='upper left')
+plt.xlabel('Expected Price')
+plt.ylabel("Total Area")
+plt.title("House Grade Classification using SVM With Respect to Expected Price and Total Area")
